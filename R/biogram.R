@@ -1,0 +1,64 @@
+#' biogram - analysis of n-grams from biological sequences
+#'
+#' @description \code{biogram} package specialises in analysis of
+#' n-grams from biological sequences as nucleic acids or proteins.
+#' 
+#' @section n-grams:
+#' n-grams (k-tuples) are sequences of \code{n} items derived
+#' from longer sequences. They may be continuous or not. From example, from the 
+#' sequence of nucleotides \code{AATA} one can extract following continuous 
+#' 2-grams (bigrams): \code{AA}, \code{AT} and \code{TA}. Moreover, there are 
+#' possible two bigrams with a single space  
+#' between elements \code{A_T} and \code{A_A} and one bigram with double extra 
+#' space between elements: \code{A__A}. In the \code{biogram} package, 
+#' \code{\link{count_ngrams}} function is responsible for extracting n-grams.
+#' The \code{d} argument is responsible for specifying the distance (extra
+#' spaces) between the elements of the n-gram.
+#' 
+#' Another important parameter is position. Instead of counting just positive 
+#' n-grams, one may count how many positive n-grams occur at given position.
+#' For example in the sequence of nucleotides \code{AATA} at position 1 is only
+#' one 2-gram \code{AA} (in the \code{biogram} notation \code{1_AA}). 
+#' That means, that all other possible bigrams \code{1_AC}, \code{1_AG}, 
+#' \code{1_AT}, \code{1_CC} and many more are not present. Such data can be 
+#' extracted using \code{\link{count_ngrams}} function with \code{pos} 
+#' parameter.
+#' 
+#' @section n-gram data dimensionality:
+#' n-grams obviously suffer from the curse of dimensionality. For example, the 
+#' peptide of length 6 has \eqn{20^{n}} n-grams and \eqn{6 \times 20^{n}} 
+#' positioned n-grams. Such enormous data is very hard to manage in R. 
+#' Furthermore, it is hard to perform analysis in that big feature space.
+#' 
+#' \code{biogram} package deals with both of mentioned problems. It uses 
+#' innate properties of n-gram data (usually a very sparse matrices) to store 
+#' them using functionalities provided by the \code{slam} package. To ease 
+#' the choice of significant features, \code{biogram} provides user with the 
+#' QuiPT, very fast permutation test for binary data (see 
+#' \code{\link{test_features}}).
+#' 
+#' Another way of reducing dimensionality of the problem is the aggregation 
+#' elements into bigger groups. For example, all positively-charged amino 
+#' acids may be aggregated into one group. This action can be performed 
+#' using the \code{\link{degenerate}} function.
+#' 
+#' @import slam
+#' @importFrom bit as.bit
+#' @author Michal Burdukiewicz, Piotr Sobczyk, Chris Lauber
+#' @docType package
+#' @name biogram-package
+#' @aliases biogram
+#' @examples
+#' #use data set from package
+#' data(human_cleave)
+#' #first nine columns represent subsequent nine amino acids from cleavage sites
+#' #degenerate the sequence to reduce the dimensionality of the problem
+#' deg_seqs <- degenerate(human_cleave[, 1L:9], 
+#'                       list(`1` = c(1, 6, 8, 10, 11, 18), 
+#'                            `2` = c(2, 13, 14, 16, 17), 
+#'                            `3` = c(5, 19, 20), 
+#'                            `4` = c(7, 9, 12, 15), 
+#'                            '5' = c(3, 4)))
+#' #extract bigrams
+#' bigrams <- count_ngrams(deg_seqs, 3, 1L:4, pos = TRUE)
+NULL
