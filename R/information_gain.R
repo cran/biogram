@@ -1,6 +1,6 @@
 #' Calculate IG for single feature
 #'
-#' Computes information gain of feature and target vector.
+#' Computes information gain of single feature and target vector.
 #'
 #' @param feature feature vector.
 #' @param target_b target in bits (as per \code{\link[bit]{as.bit}}).
@@ -23,10 +23,10 @@ calc_ig_single <- function(feature, target_b, len_target, pos_target, ES) {
   crosstable <- fast_crosstable(target_b, len_target, pos_target, feature)
   counts_feature <- c(crosstable[2] + crosstable[4], crosstable[1] + crosstable[3])
   
-  log_crosstable <- c(entlog(crosstable[1]/counts_feature[2]),
-                      entlog(crosstable[3]/counts_feature[2]),
-                      entlog(crosstable[2]/counts_feature[1]),
-                      entlog(crosstable[4]/counts_feature[1]))
+  log_crosstable <- c(entlog(crosstable[1] %/e% counts_feature[2]),
+                      entlog(crosstable[3] %/e% counts_feature[2]),
+                      entlog(crosstable[2] %/e% counts_feature[1]),
+                      entlog(crosstable[4] %/e% counts_feature[1]))
   
   #entropy - conditional entrophy
   ES + (crosstable[1] * log_crosstable[1] +
@@ -53,6 +53,7 @@ calc_ig_single <- function(feature, target_b, len_target, pos_target, ES) {
 #' calc_ig(sample(0L:1, 100, replace = TRUE), matrix(sample(0L:1, 400, replace = TRUE), ncol = 4))
 #' @seealso
 #' Other implemented \code{\link{criterions}}.
+#' 
 #' Subroutine used in \code{\link[base]{apply}} statement in \code{calc_ig}: 
 #' \code{\link{calc_ig_single}}
 
@@ -67,9 +68,10 @@ calc_ig <- function(target, features) {
     calc_ig_single(single_feature, tar_bit, l_tar, pos_tar, ES))
 }
 
-#a logarithm safe for entropy calculation
-entlog <- function(x, ...) {
-  log_values <- log(x, ...)
-  log_values[log_values == -Inf] <- 0
-  log_values
-}
+#logarithm safe for entropy calculation
+entlog <- function(x, ...)
+  ifelse(x == 0, 0, log(x, ...))
+
+#division safe for entropy calculation
+"%/e%" <- function(x, y)
+  ifelse(x == 0 && y == 0, 0, x/y)

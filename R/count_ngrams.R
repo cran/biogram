@@ -1,49 +1,66 @@
-#' Detect And Count N-Grams In Sequences
+#' Count n-grams in sequences
 #'
-#' Counts all n-grams present in sequences.
+#' Counts all n-grams or position-specific n-grams present in the input sequence(s).
 #'
 #' @param seq \code{integer} vector or matrix describing sequence(s). 
 #' @param n \code{integer} size of n-gram.
-#' @param u unigrams (\code{integer}, \code{numeric} or \code{character} vector).
+#' @param u \code{integer}, \code{numeric} or \code{character} vector of all
+#' possible unigrams.
 #' @param d \code{integer} vector of distances between elements of n-gram (0 means 
 #' consecutive elements). See Details.
-#' @param pos \code{logical}, if \code{TRUE} n_grams contains position information.
+#' @param pos \code{logical}, if \code{TRUE} position-specific n_grams are counted.
 #' @param scale \code{logical}, if \code{TRUE} output data is normalized. Should be
 #' used only for n-grams without position information. See \code{Details}.
 #' @param threshold \code{integer}, if not equal to 0, data is binarized into
-#' two groups (larger or equal to threshold, smaller than threshold).
-#' @return a \code{\link[slam]{simple_triplet_matrix}}. See \code{Details} for specifics of the column naming.
-#' @details A \code{distance} vector should be always \code{n} - 1 long. For example 
-#' when \code{n} = 3, \code{d} = c(1, 2) means A_A__A. For \code{n} = 4, 
-#' \code{d} = c(2, 0, 1) means A__AA_A. If vector \code{d} has length 1, it is recycled to
+#' two groups (larger or equal to threshold vs. smaller than threshold).
+#' 
+#' @details A \code{distance} vector should be always \code{n} - 1 in length.
+#' For example when \code{n} = 3, \code{d} = c(1,2) means A_A__A. For \code{n} = 4, 
+#' \code{d} = c(2,0,1) means A__AA_A. If vector \code{d} has length 1, it is recycled to
 #' length \code{n} - 1.
 #' 
-#' Column names follow a specific convention. Elements of n-gram are separated by 
-#' dot. If \code{pos} = \code{TRUE}, the left side of name means actual position of the 
-#' n-gram (separated by \code{_}). the Right side of name is vector of distance(s) 
-#' used separated by \code{_}.
+#' n-gram names follow a specific convention and have three parts for position-specific
+#' n-grams and two parts otherwise. The parts are separated by \code{_}. The \code{.} symbol
+#' is used to separate elements within a part. The general naming scheme is 
+#' \code{POSITION_NGRAM_DISTANCE}. The optional \code{POSITION} part of the name indicates
+#' the actual position of the n-gram in the sequence(s) and will be present 
+#' only if \code{pos} = \code{TRUE}. This part is always a single integer. The \code{NGRAM}
+#' part of the name is a sequence of elements in the n-gram. For example, \code{4.2.2}
+#' indicates the n-gram 422 (e.g. TCC). The \code{DISTANCE} part of the name is a vector of
+#' distance(s). For example, \code{0.0} indicates zero distances (continuous n-grams), while
+#' \code{1.2} represents distances for the n-gram A_A__A.
 #' 
-#' Examples of naming convention:
+#' Examples of n-gram names:
 #' \itemize{
-#' \item{46_4.4.4_0_1 means trigram 44_4 on position 46.}
-#' \item{12_2.1_2 means bigram 2__1 on position 12.}
-#' \item{8_1.1.1_0_0 means continous trigram 111 on position 8.}
+#' \item{46_4.4.4_0.1 : trigram 44_4 on position 46}
+#' \item{12_2.1_2     : bigram 2__1 on position 12}
+#' \item{8_1.1.1_0.0  : continuous trigram 111 on position 8}
+#' \item{1.1.1_0.0    : continuous trigram 111 without position information}
 #' }
+#' 
+#' @return a \code{\link[slam]{simple_triplet_matrix}} where columns represent
+#' n-grams and rows sequences. See \code{Details} for specifics of the naming convention.
+#' 
+#' @note By default, the counted n-gram data is stored in a memory-saving format.
+#' To convert an object to a 'classical' matrix use the \code{\link[base]{as.matrix}}
+#' function. See examples for further information.
 #' @export
 #' @seealso 
 #' Create vector of possible n-grams: \code{\link{create_ngrams}}.
 #' 
-#' Get n-grams from analyzed sequence: \code{\link{seq2ngrams}}.
+#' Extract n-grams from sequence(s): \code{\link{seq2ngrams}}.
 #' 
 #' Get indices of n-grams: \code{\link{get_ngrams_ind}}.
 #' 
 #' Count n-grams for multiple values of n: \code{\link{count_multigrams}}.
 #' @examples 
-#' #trigrams without position for nucleotides
+#' #count trigrams without position information for nucleotides
 #' count_ngrams(sample(1L:4, 50, replace = TRUE), 3, 1L:4, pos = FALSE)
-#' #trigrams with position from multiple nucleotide sequences
+#' #count position-specific trigrams from multiple nucleotide sequences
 #' seqs <- matrix(sample(1L:4, 600, replace = TRUE), ncol = 50)
-#' count_ngrams(seqs, 3, 1L:4, pos = TRUE)
+#' ngrams <- count_ngrams(seqs, 3, 1L:4, pos = TRUE)
+#' #output results of the n-gram counting to screen
+#' as.matrix(ngrams)
 
 count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold = 0) {
   
@@ -97,7 +114,7 @@ count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold
   if (scale)
     res <- res/max_grams
   
-  colnames(res) <- paste(colnames(res), paste0(attr(ngram_ind, "d"), collapse = "_"), 
+  colnames(res) <- paste(colnames(res), paste0(attr(ngram_ind, "d"), collapse = "."), 
                          sep = "_")
   res
 }
