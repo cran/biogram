@@ -2,13 +2,14 @@
 #'
 #' A result of \code{\link{test_features}} function.
 #'
-#' @details An object of class \code{test_features} is a numeric vector of p-values. Additional 
+#' @details An object of class \code{feature_test} is a numeric vector of p-values. Additional 
 #' attributes characterizes futher the details of test which returned these p-values.
 #' @section Attributes:
 #' \describe{
 #'   \item{criterion}{the criterion used in permutation test.}
 #'   \item{adjust}{the name of p-value adjusting method}
 #'   \item{times}{the number of permutations.  If QuiPT was chosen \code{NA}.}
+#'   \item{occ}{frequency of features splitted in subset based on the value of target.}
 #' }
 #' @name feature_test
 #' @docType class

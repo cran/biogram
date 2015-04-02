@@ -1,4 +1,4 @@
-#' Get All Possible N-Grams
+#' Get all possible n-Grams
 #'
 #' Creates vector of all posible n_grams (for given \code{n}).
 #'
@@ -17,8 +17,8 @@
 #' #bigrams for standard aminoacids with positions, 10 amino acid long sequence, so 
 #' #only 9 bigrams can be located in sequence
 #' create_ngrams(2, 1L:20, 9)
-#' #bigrams for DNA with positions, 10 nucleotide long sequence, distance 1, so only 8 bigrams
-#' #in sequence
+#' #bigrams for DNA with positions, 10 nucleotide long sequence, distance 1, so only 
+#' #8 bigrams in sequence
 #' #paste0 adds information about distance at the end of n-gram
 #' paste0(create_ngrams(2, 1L:4, 8), "_0")
 
@@ -33,58 +33,7 @@ create_ngrams <- function(n, u, possible_grams = NULL) {
 }
 
 
-#' Get Indices of N-Grams
-#'
-#' Computes list of n-gram elements positions in sequence.
-#'
-#' @param len_seq \code{integer} value describing sequence's length.
-#' @inheritParams count_ngrams
-#' @return A list with number of elements equal to \code{n}. Every element is a 
-#' vector containing locations of given n-gram letter. For example, first element of
-#' list contain indices of first letter of all n-grams. The attribute \code{d} of output
-#' contains distances between letter used to compute locations (see Details).
-#' @details A format of \code{d} vector is discussed in Details of 
-#' \code{\link{count_ngrams}}.
-#' @export
-#' @examples 
-#' #positions trigrams in sequence of length 10
-#' get_ngrams_ind(10, 9, 0)
-
-get_ngrams_ind <- function(len_seq, n, d) {
-  #n - size of gram (i.e. 2-grams: "AA", "AC", ...)
-  #d - distance between two consecutive letter (a vector of distances)
-  
-  #calculate indices of n-grams elements
-  ind <- lapply(1L:n, function(i) 
-    (1 + i - 1):(len_seq - n + i))
-  
-  if(length(d) != 1 && length(d) != n - 1)
-    stop("Length of d must be 1 or n - 1")
-  
-  
-  if(n > 1) {
-    #if distance vector is too short, recycle it
-    if(length(d) == 1 && n > 2)
-      d <- rep(d, n - 1)
-    
-    if(sum(d) > 0) {
-      ind[-1] <- lapply(1L:length(d), function(i)
-        ind[[i + 1]] + sum(d[1L:i]))
-      not_taken <- ind[[1]][(length(ind[[1]]) - sum(d) + 1):length(ind[[1]])]
-      ind <- lapply(ind, function(i) i[-not_taken])
-    }
-    
-    attr(ind, "d") <- d
-  } else {
-    #distance is a nonsense for unigrams
-    attr(ind, "d") <- 0
-  }
-  
-  ind
-}
-
-
-#' Extract N-Grams From Sequence
+#' Extract n-grams from sequence
 #'
 #' Extracts vector of n-grams present in sequence(s).
 #'
@@ -99,7 +48,9 @@ get_ngrams_ind <- function(len_seq, n, d) {
 #' seqs <- matrix(sample(1L:4, 600, replace = TRUE), ncol = 50)
 #' seq2ngrams(seqs, 3, 1L:4)
 
-seq2ngrams <- function(seq, n, u, d = 0) {
+seq2ngrams <- function(seq, n, u, d = 0, pos = FALSE) {
+  if (!(is.matrix(seq) || is.vector(seq)))
+    stop("'seq' must be vector or matrix.")
   
   #if sequence is not a matrix (single sequence), convert it to matrix with 1 row
   if (class(seq) != "matrix")
@@ -118,11 +69,68 @@ seq2ngrams <- function(seq, n, u, d = 0) {
   #extract n-grams from sequene
   res <- t(vapply(1L:n_seqs, function(i) {
     grams <- seq2ngrams_helper(seq[i, ], ind = ngram_ind, max_grams)
-    paste(grams, paste0(attr(ngram_ind, "d"), collapse = "_"), 
+    paste(grams, paste0(attr(ngram_ind, "d"), collapse = "."), 
           sep = "_")
   }, rep("a", max_grams)))
   if (max_grams == 1)
     res <- t(res)
+  
+  #add position information if requested
+  if(pos)
+    res <- do.call(cbind, lapply(1L:ncol(res), function(pos_id)
+      paste0(pos_id, "_", res[, pos_id])))
+  
   res
 }
 
+
+#' Gap n-grams
+#'
+#' Introduces gaps in the n-grams.
+#'
+#' @inheritParams position_ngrams
+#' @return A \code{character} vector of (n-1)-grams with introduced gaps.
+#' @details A single element of the input n-gram at a time will be replaced 
+#' by a gap. For example, introducing gaps in n-gram \code{2_1.1.2_0.1} 
+#' will results in three n-grams: \code{3_1.2_1} (where the \code{2_1_0} unigram 
+#' was replaced by a gap), \code{2_1.2_2} and \code{2_1.1_0}.
+#' @export
+#' @examples 
+#' gap_ngrams(c("2_1.1.2_0.1", "3_1.1.2_0.0", "3_2.2.2_0.0"))
+
+gap_ngrams <- function(ngrams) {
+  #check if unigrams are there 
+  
+  #no need to validate n-grams, decode does it for us
+  decoded <- decode_ngrams(ngrams)
+  
+  df <- ngrams2df(ngrams)
+  
+  #splitted ngrams
+  sn_grams <- strsplit(df[, "ngram"], ".", fixed = TRUE)
+  distances <- strsplit(df[, "distance"], ".", fixed = TRUE)
+  
+  unlist(lapply(1L:length(ngrams), gap_single_ngram, sn_grams, distances, df, decoded))
+}
+
+
+gap_single_ngram <- function(ngram_id, sn_grams, distances, df, decoded) {
+  sn_gram <- sn_grams[[ngram_id]]
+  distance <- as.numeric(distances[[ngram_id]])
+  pos_start <- df[ngram_id, "position"]
+  #single decoded
+  s_decoded <- strsplit(decoded[ngram_id], "")[[1]]
+  
+  ids <- which(s_decoded != "_")
+  res <- unlist(lapply(ids, function(id) {
+    s_decoded[id] <- "_"
+    code_ngrams(paste0(s_decoded, collapse = ""))
+  }))
+  
+  #positions of gapped n-grams
+  #first position is increased, because first element of the n-gram becomes a gap
+  res_positions <- c(pos_start + ids[2] - ids[1], rep(pos_start, length(res) - 1))
+  
+  unlist(lapply(1L:length(ids), function(i)
+    paste0(res_positions[i], "_", res[i])))
+}

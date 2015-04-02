@@ -6,31 +6,26 @@
 #' @param target \code{integer} vector with target information (e.g. class labels).
 #' @param features \code{integer} matrix of features with number of rows equal 
 #' to the length of the target vector.
-#' @param criterion criterion used in permutation test. See \code{\link{criterions}} for the
-#' list of possible criterions.
+#' @param criterion criterion used in permutation test. See \code{\link{calc_criterion}} 
+#' for the list of possible criterions.
 #' @param adjust name of p-value adjustment method. See \code{\link[stats]{p.adjust}}
 #' for the list of possible values. If \code{NULL}, no adjustment is done.
 #' @param threshold \code{integer}. Features that occur less than \code{threshold}
-#' and more often than \code{nrow(features)-threshold} are discarded from the permutation test.
+#' and more often than \code{nrow(features)-threshold} are discarded from the permutation 
+#' test.
 #' @param quick \code{logical}, if \code{TRUE} Quick Permutation Test (QuiPT) is used.
 #' @param times number of times procedure should be repeated. Ignored if \code{quick} is 
 #' \code{TRUE}.
 #' 
-#' @details Currently implemented criterions:
-#' \itemize{
-#' \item{"\code{ig}" - information gain}
-#' }
-#' 
-#' Since the procedure involes multiple testing, it is advisable to use one of the avaible
-#' p-value adjustment methods. Such methods can be used directly by specifying the 
-#' \code{adjust} parameter.
+#' @details Since the procedure involves multiple testing, it is advisable to use one
+#' of the avaible p-value adjustment methods. Such methods can be used directly by 
+#' specifying the \code{adjust} parameter.
 #' @return an object of class \code{\link{feature_test}}.
 #' @note Both \code{target} and \code{features} must be binary, i.e. contain only 0 
 #' and 1 values.
 #' 
-#' Features occuring too often and too rarely are considered not informative and may be removed 
-#' using the threshold parameter.
-#' @seealso See \code{\link{criterion_distribution}} for insight on QuiPT.
+#' Features occuring too often and too rarely are considered not informative and may be 
+#' removed using the threshold parameter.
 #' @export
 #' @keywords nonparametric
 #' @references 
@@ -39,6 +34,10 @@
 #' Machine Learning: ECML 2004, 15th European 
 #' Conference on Machine Learning, Springer, 2004.
 #' @seealso 
+#' \code{\link{calc_criterion}} - computes selected criterion.
+#' 
+#' \code{\link{distr_crit}} - distribution of criterion used in QuiPT.
+#' 
 #' \code{\link{summary.feature_test}} - summary of results.
 #' 
 #' \code{\link{cut.feature_test}} - aggregates test results in groups based on feature's
@@ -50,13 +49,18 @@
 #' tar_feat2 <- create_feature_target(9, 391, 1, 599)
 #' #insignificant feature
 #' tar_feat3 <- create_feature_target(198, 202, 300, 300)
-#' test_res <- test_features(tar_feat1[, 1], cbind(tar_feat1[, 2], tar_feat2[, 2], tar_feat3[, 2]))
+#' test_res <- test_features(tar_feat1[, 1], cbind(tar_feat1[, 2], tar_feat2[, 2], 
+#'                           tar_feat3[, 2]))
 #' summary(test_res)
 #' cut(test_res)
 test_features <- function(target, features, criterion = "ig", adjust = "BH", 
                           threshold = 1, quick = TRUE, times = 1e5) {
   
   valid_criterion <- check_criterion(criterion)
+  
+  #criterion function
+  crit_function <- function(target, features)
+    calc_criterion(target, features, valid_criterion[["crit_function"]])
   
   #few tests for data consistency
   if (!all(target %in% c(0, 1))) {
@@ -73,13 +77,14 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
   })
   
   feature_size <- if (class(features) == "simple_triplet_matrix") {
-    col_sums(features)
+    slam::col_sums(features)
   } else {
     colSums(features)
   }
   
   #eliminate non-infomative features
-  features <- features[, feature_size > threshold & feature_size < (nrow(features) - threshold)]
+  features <- features[, feature_size > threshold & feature_size < 
+                         (nrow(features) - threshold)]
   
   p_vals <- if(quick) {
     
@@ -87,8 +92,9 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
     feature_size <- unique(feature_size)
     
     dists <- lapply(feature_size, function(i){
-      t <- create_feature_target(i, abs(sum(target) - i), 0, abs(length(target) - sum(target))) 
-      criterion_distribution(t[, 1], t[, 2], graphical_output = FALSE, criterion = criterion)
+      t <- create_feature_target(i, abs(sum(target) - i), 0, 
+                                 abs(length(target) - sum(target))) 
+      distr_crit(t[, 1], t[, 2], criterion = criterion)
     })
     
     names(dists) <- feature_size
@@ -96,15 +102,18 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
     apply(features, 2, function(feature) {
       feature <- as.matrix(feature, ncol = 1)
       n <- length(target)
-      estm <- valid_criterion[["crit_function"]](target = target, features = feature)
+      estm <- crit_function(target, feature)
       dist <- dists[[paste(sum(feature))]]
-      1 - dist[3, which.max(dist[1, ] >= estm - 1e-15)]
+      1 - dist[which.max(dist[, "criterion"] >= estm - 1e-15), "cdf"]
     })
   } else {
     #slow version
-    rowMeans(valid_criterion[["crit_function"]](target, features) <= 
-               replicate(times, valid_criterion[["crit_function"]](sample(target), features)))
+    rowMeans(crit_function(target, features) <= 
+               replicate(times, crit_function(sample(target), features)))
   }
+  
+  #p-values sometimes are a tiny little bit bigger than 1
+  p_vals[p_vals > 1] <- 1
   
   if(!is.null(adjust))
     p_vals <- p.adjust(p_vals, method = adjust)

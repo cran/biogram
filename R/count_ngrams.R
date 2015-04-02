@@ -2,7 +2,7 @@
 #'
 #' Counts all n-grams or position-specific n-grams present in the input sequence(s).
 #'
-#' @param seq \code{integer} vector or matrix describing sequence(s). 
+#' @param seq a vector or matrix describing sequence(s). 
 #' @param n \code{integer} size of n-gram.
 #' @param u \code{integer}, \code{numeric} or \code{character} vector of all
 #' possible unigrams.
@@ -53,6 +53,8 @@
 #' Get indices of n-grams: \code{\link{get_ngrams_ind}}.
 #' 
 #' Count n-grams for multiple values of n: \code{\link{count_multigrams}}.
+#' 
+#' Count only specified n-grams: \code{\link{count_specified}}.
 #' @examples 
 #' #count trigrams without position information for nucleotides
 #' count_ngrams(sample(1L:4, 50, replace = TRUE), 3, 1L:4, pos = FALSE)
@@ -62,7 +64,8 @@
 #' #output results of the n-gram counting to screen
 #' as.matrix(ngrams)
 
-count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold = 0) {
+count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, 
+                         scale = FALSE, threshold = 0) {
   
   #if sequence is not a matrix (single sequence), convert it to matrix with 1 row
   if (class(seq) != "matrix")
@@ -71,24 +74,29 @@ count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold
   if (scale && pos)
     stop("Cannot scale positioned n-grams (scaling a sparse matrix).")
   
+  u_seq <- unique(as.vector(seq))
+  if (!(all(u_seq %in% u)))
+    warning(paste0("'seq' contains following unigrams not present in 'u' parameter:\n",
+                   paste(u_seq[!(u_seq %in% u)], collapse = ", ")))
+  
   #length of sequence
   len_seq <- ncol(seq)
   #number of sequences
   n_seqs <- nrow(seq)
   
   #create list of n-grams for n
-  possib_ngrams <- create_ngrams(n, u)
+  possib_ngrams <- create_ngrams(n, u)  
   
   #look for n-gram indices for d
   ngram_ind <- get_ngrams_ind(len_seq, n, d)
-  
   max_grams <- calc_max_grams(len_seq, n, ngram_ind)
+  
   
   #extract n-grams from sequence
   grams <- vapply(1L:n_seqs, function(i)
     seq2ngrams_helper(seq[i, ], ind = ngram_ind, max_grams), rep("a", max_grams))
   
-  if (pos) {
+  if (pos) {    
     #get positioned possible n-grams
     pos_possib_ngrams <- create_ngrams(n, u, max_grams)
     
@@ -102,7 +110,7 @@ count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold
     
     res <- do.call(cbind, lapply(possib_ngrams, function(current_ngram)
       as.simple_triplet_matrix(vapply(1L:n_seqs, function(current_sequence)
-        sum(grams[, current_sequence] == current_ngram), 0))))
+        sum(grams[, current_sequence] == current_ngram, na.rm = TRUE), 0))))
     colnames(res) <- possib_ngrams
   }
   
@@ -117,18 +125,6 @@ count_ngrams <- function(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold
   colnames(res) <- paste(colnames(res), paste0(attr(ngram_ind, "d"), collapse = "."), 
                          sep = "_")
   res
-}
-
-#helper function calculating maximum number of n-grams possible. Throws an
-#error if there is no possibility of extracting n-gram from a sequence 
-#(when result is negative)
-
-calc_max_grams <- function(len_seq, n, ngram_ind){
-  #use attr(ngram_ind, "d") instead of d because of distance recycling
-  max_grams <- len_seq - n - sum(attr(ngram_ind, "d")) + 1
-  if (max_grams < 1)
-    stop("n-gram too long.")
-  max_grams
 }
 
 count_ngrams_helper <- function(seq, feature_list, n, ind, pos) {

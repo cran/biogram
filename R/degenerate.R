@@ -10,6 +10,9 @@
 #' containing aggregated elements.
 #' @note Both sequence and \code{element_groups} should contain lower-case letters.
 #' Upper-case will be automatically converted without a message.
+#' 
+#' Characters not present in the \code{element_groups} will be converted to NA with a 
+#' warning.
 #' @export
 #' @seealso \code{\link{l2n}} to easily convert information stored in biological sequences from 
 #' letters to numbers.
@@ -24,8 +27,11 @@
 
 degenerate <- function(seq, element_groups) {
   tmp_seq <- tolower(seq)
-  if (!all(unique(tmp_seq) %in% unlist(element_groups)))
-    stop("The sequence contains elements not present in any of groups.")
+  if (!all(unique(tmp_seq) %in% unlist(element_groups))) {
+    warning("'seq' contains elements not present in 'element_groups'. Such elements will be replaced by NA.")
+    tmp_seq[!(tmp_seq %in% unlist(element_groups))] <- NA
+  }
+  
   
   for (i in 1L:length(element_groups)) {
     tmp_seq[tmp_seq %in% element_groups[[i]]] <- names(element_groups)[i]
@@ -46,8 +52,10 @@ degenerate <- function(seq, element_groups) {
 #' @return a \code{numeric} vector containing converted elements.
 #' @export
 #' @keywords manip
-#' @seealso \code{l2n} is based on \code{\link{degenerate}} the opposite of
-#' \code{\link{n2l}}.
+#' @seealso 
+#' \code{l2n} is a wrapper around \code{\link{degenerate}}.
+#' 
+#' Inverse function: \code{\link{n2l}}.
 #' @examples
 #' sample_seq <- c("a", "d", "d", "g", "a", "g", "n", "a", "l")
 #' l2n(sample_seq, "prot")
@@ -76,8 +84,10 @@ l2n <- function(seq, seq_type) {
 #' @return a \code{numeric} vector containing converted elements.
 #' @export
 #' @keywords manip
-#' @seealso \code{n2l} is based on \code{\link{degenerate}} the opposite of
-#' \code{\link{l2n}}.
+#' @seealso 
+#' \code{n2l} is a wrapper around \code{\link{degenerate}}.
+#' 
+#' Inverse function: \code{\link{l2n}}.
 #' @examples
 #' sample_seq <- c(1, 3, 3, 6, 1, 6, 12, 1, 10)
 #' n2l(sample_seq, "prot")

@@ -1,8 +1,19 @@
+Changes from Version 1.1 to 1.2.
+* Added add_1grams function.
+* Added construct_ngrams function (iteratively construct longer n-grams).
+* Added ngrams2df function.
+* Added count_specified function (counts only selected n-grams).
+* Added table_ngrams function (counts of n-grams considering their class labels).
+* Added code_ngrams function (coding n-grams to biogram format).
+* Added gap_ngrams function.
+* Added criterion_distribution class followed with new methods: plot. 
+* Improved position_ngrams output.
+
 Changes from Version 1.0 to 1.1
-* Improved functionalities of calc_multigrams
+* Improved functionalities of calc_multigrams.
 * Improved explanation of n-gram naming convention.
 * Added more universal version of calc_distribution
 * Added feature_test class followed with new methods: print, summary, cut.
 * Added functions transforming n-grams to less abstruse form: decode_ngrams,
   position_ngrams.
-* Added citation
+* Added citation.
