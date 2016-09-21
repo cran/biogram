@@ -2,9 +2,9 @@
 #'
 #' Counts specified n-grams in the input sequence(s).
 #'
-#' @param seq a vector or matrix describing sequence(s). 
-#' @param ngrams a vector of n-grams. Must have the same \code{n}.
-#' @return a \code{\link[slam]{simple_triplet_matrix}} where columns represent
+#' @param seq vector or matrix describing sequence(s). 
+#' @param ngrams vector of n-grams.
+#' @return A \code{\link[slam]{simple_triplet_matrix}} where columns represent
 #' n-grams and rows sequences.
 #' @export
 #' @details \code{\link{count_specified}} counts only selected n-grams declared by
@@ -21,72 +21,69 @@
 #'                                  "2_4.2_2", "2_1.4_2", "3_1.3_2"))
 
 count_specified <- function(seq, ngrams) {
-  #validate n-grams
+  # validate n-grams
   validated_ngram <- sapply(ngrams, is_ngram)
   if(!all(validated_ngram))
     stop("Improper n-grams: ", paste(names(which(!validated_ngram)), collapse = ", "))
   
-  #if sequence is not a matrix (single sequence), convert it to matrix with 1 row
+  # if sequence is not a matrix (single sequence), convert it to matrix with 1 row
   if (class(seq) != "matrix")
     seq <- matrix(seq, nrow = 1)
   
-  #length of sequence
+  # length of sequence
   len_seq <- ncol(seq)
-  #number of sequences
+  # number of sequences
   n_seqs <- nrow(seq)
   
   df <- ngrams2df(ngrams)
   
-  #splitted ngrams
+  # splitted ngrams
   sn_grams <- strsplit(df[, "ngram"], ".", fixed = TRUE)
   
-  #n in ngram
-  n <- unique(vapply(sn_grams, length, 1))
-  if(length(n) > 1)
-    stop("n-grams must have the same n.")
+  ngrams_list <- lapply(1L:nrow(df), function(single_ngram) 
+    list(ngram = strsplit(df[single_ngram, "ngram"], ".", fixed = TRUE)[[1]],
+         distance = as.numeric(strsplit(df[single_ngram, "distance"], ".", fixed = TRUE)[[1]])
+    )
+  )
   
-  #n-grams are grouped by their unique distance to speed up function
-  #when ncol(df) == 3 n-grams are positioned
+  # when ncol(df) == 3 n-grams are positioned
+  if(ncol(df) == 3)
+    ngrams_list <- lapply(1L:nrow(df), function(single_ngram) 
+      c(ngrams_list[[single_ngram]], position = as.numeric(df[single_ngram, "position"]))
+    )
+  
+  names(ngrams_list) <- ngrams
+
+  # when ncol(df) == 3 n-grams are positioned
   res <- if(ncol(df) == 3) {
-    do.call(cbind, lapply(unique(df[, "distance"]), function(unique_dist) {
-      dist_df <- df[df[, "distance"] == unique_dist, ]
-      #all possible n-gram positions
-      all_ngram_pos <- get_ngrams_ind(len_seq, n, 
-                                      as.numeric(strsplit(df[, "distance"], ".", fixed = TRUE)[[1]]))
-      vapply(1L:nrow(dist_df), function(ngram_id)
-        vapply(1L:n_seqs, function(single_seq) {
-          #positions of the n-gram of interest
-          single_ngram_pos <- sapply(all_ngram_pos, function(single_pos) 
-            single_pos[dist_df[ngram_id, "position"]])
-          as.numeric(all(as.character(seq[single_seq, single_ngram_pos]) == sn_grams[[ngram_id]]))
-        }, 0), rep(0, n_seqs))
-    }))
+    vapply(ngrams_list, function(single_ngram) 
+      count_single_positioned_ngram(single_ngram, seq, len_seq), rep(0, nrow(seq)))
   } else {
-    do.call(cbind, lapply(unique(df[, "distance"]), function(unique_dist) {
-      #unpositioned n-grams
-      dist_df <- df[df[, "distance"] == unique_dist, ]
-      #all possible n-gram positions
-      all_ngram_pos <- get_ngrams_ind(len_seq, n, 
-                                      as.numeric(strsplit(df[, "distance"], ".", fixed = TRUE)[[1]]))
-      vapply(1L:nrow(dist_df), function(ngram_id)
-        vapply(1L:n_seqs, function(single_seq) {
-          #positions of the n-gram of interest
-          all_ngram_pos <- do.call(rbind, all_ngram_pos)
-          sum(apply(all_ngram_pos, 2, function(single_ngram_pos)
-            as.numeric(all(as.character(seq[single_seq, single_ngram_pos]) == sn_grams[[ngram_id]]))), na.rm = TRUE)
-        }, 0), rep(0, n_seqs))
-    }))
+    vapply(ngrams_list, function(single_ngram) 
+      count_single_unpositioned_ngram(single_ngram, seq, len_seq), rep(0, nrow(seq)))
   }
-  
-  #reoder results - were shuffled because of indexing on unqiue distance
-  res <- res[, order(unlist(lapply(unique(df[, "distance"]), function(unique_dist) 
-    which(df[, "distance"] == unique_dist, ))))]
   
   if(class(res) == "numeric") {
     res <- matrix(res, ncol = 1)
   }
-  #name columns
+  # name columns
   colnames(res) <- ngrams
   
   as.simple_triplet_matrix(res)
 }
+
+
+count_single_positioned_ngram <- function(single_ngram, seq, len_seq) {
+  all_ngram_pos <- do.call(rbind, get_ngrams_ind(len_seq, length(single_ngram[["ngram"]]), single_ngram[["distance"]]))
+  as.numeric(rowSums(seq[, all_ngram_pos[, single_ngram[["position"]]]] == single_ngram[["ngram"]]) == 2)
+}
+
+count_single_unpositioned_ngram <- function(single_ngram, seq, len_seq) {
+  all_ngram_pos <- do.call(rbind, get_ngrams_ind(len_seq, length(single_ngram[["ngram"]]), single_ngram[["distance"]]))
+  
+  vapply(1L:nrow(seq), function(single_seq) {
+    sum(apply(all_ngram_pos, 2, function(single_ngram_pos)
+      as.numeric(all(as.character(seq[single_seq, single_ngram_pos]) == single_ngram[["ngram"]]))), na.rm = TRUE)
+  }, 0)
+}
+

@@ -4,8 +4,8 @@
 #' 
 #' @param target \{0,1\}-valued target vector. See Details.
 #' @param feature \{0,1\}-valued feature vector. See Details.
-#' @param criterion the criterion used for calculations of distribution. 
-#' See \code{\link{calc_criterion}}.
+#' @param criterion criterion used for calculations of distribution. 
+#' See \code{\link{calc_criterion}} for the list of avaible criteria.
 #' @export
 #' @details both \code{target} and \code{feature} vectors may contain only 0 and 1.
 #' @return An object of class \code{\link{criterion_distribution}}.
@@ -38,14 +38,14 @@ distr_crit <- function(target, feature, criterion = "ig") {
   
   max_iter <- min(non_zero_target, non_zero_feat)
   cross_tab <- fast_crosstable(as.bit(target), length(target), sum(target), feature)
-  if(cross_tab[3L] == 0)
-    max_iter <- sort(cross_tab)[2]
+  # if(cross_tab[3L] == 0)
+  #   max_iter <- sort(cross_tab)[2]
   
-  #values of criterion for different contingency tables
+  # values of criterion for different contingency tables
   diff_conts <- sapply(0L:max_iter, function(i) {
-    #to do - check if other criterions also follow this distribution
+    # to do - check if other criterions also follow this distribution
     
-    #if there are more 1 than 0
+    # if there are more 1 than 0
     ones <- n - non_zero_target - non_zero_feat + i > 0
     
     k <- if(ones) {
@@ -60,9 +60,9 @@ distr_crit <- function(target, feature, criterion = "ig") {
                           size = n,
                           prob = c(p*q, (1-p)*q, p*(1-q), (1-p)*(1-q)),
                           log = TRUE)
-    #feature-target data - different contingency tables
+    # feature-target data - different contingency tables
     ft_data <- do.call(create_feature_target, as.list(k))
-    #values of criterion
+    # values of criterion
     vals <- unname(crit_function(ft_data[,1], ft_data[, 2, drop = FALSE]))
     c(prob_log = prob_log, vals = vals)
   })

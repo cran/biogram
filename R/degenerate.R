@@ -4,35 +4,46 @@
 #' elements to bigger groups.
 #' 
 #' @param seq \code{character} vector or matrix representing single sequence.
-#' @param element_groups list of groups to which elements of sequence should be aggregated.
+#' @param element_groups encoding of elements: list of groups to which elements 
+#' of sequence should be aggregated. Must have unique names.
 #' @keywords manip
-#' @return a \code{character} vector or matrix (if input is a matrix) 
+#' @return A \code{character} vector or matrix (if input is a matrix) 
 #' containing aggregated elements.
-#' @note Both sequence and \code{element_groups} should contain lower-case letters.
-#' Upper-case will be automatically converted without a message.
-#' 
+#' @note  
 #' Characters not present in the \code{element_groups} will be converted to NA with a 
 #' warning.
 #' @export
 #' @seealso \code{\link{l2n}} to easily convert information stored in biological sequences from 
 #' letters to numbers.
+#' \code{\link{calc_ed}} to calculate distance between encodings.
 #' @keywords manip
 #' @examples
 #' sample_seq <- c(1, 3, 1, 3, 4, 4, 3, 1, 2)
 #' table(sample_seq)
 #' 
-#' #aggregate sequence to purins and pyrimidines
+#' # aggregate sequence to purins and pyrimidines
 #' deg_seq <- degenerate(sample_seq, list(w = c(1, 4), s = c(2, 3)))
 #' table(deg_seq)
 
 degenerate <- function(seq, element_groups) {
-  tmp_seq <- tolower(seq)
+  tmp_seq <- seq
   if (!all(unique(tmp_seq) %in% unlist(element_groups))) {
-    warning("'seq' contains elements not present in 'element_groups'. Such elements will be replaced by NA.")
+    warning("'seq' contains elements not present in 'element_groups'. 
+            Element(s): ", 
+            paste0(setdiff(unique(tmp_seq), unlist(element_groups)), collapse = ", "), 
+            " will be replaced by NA.")
     tmp_seq[!(tmp_seq %in% unlist(element_groups))] <- NA
   }
+
+  if(is.null(names(element_groups))) {
+    warning("'element_groups' is unnamed. Assumed names of groups are their ordinal numbers.")
+    names(element_groups) <- 1L:length(element_groups)
+  }
   
-  
+  if(length(unique(names(element_groups))) != length(names(element_groups))) {
+    stop("'element_groups' must have unique names.")
+  }
+    
   for (i in 1L:length(element_groups)) {
     tmp_seq[tmp_seq %in% element_groups[[i]]] <- names(element_groups)[i]
   }
@@ -46,10 +57,10 @@ degenerate <- function(seq, element_groups) {
 #' Convert letters to numbers
 #'
 #' Converts biological sequence from letter to number notation.
-#' @param seq \code{character} vector representing single sequence.
+#' @inheritParams degenerate
 #' @param seq_type the type of sequence. Can be \code{rna}, \code{dna} or \code{prot}.
 #' @keywords manip
-#' @return a \code{numeric} vector containing converted elements.
+#' @return a \code{numeric} vector or matrix containing converted elements.
 #' @export
 #' @keywords manip
 #' @seealso 
@@ -71,17 +82,21 @@ l2n <- function(seq, seq_type) {
                                    "m", "n", "p", "q", "r", 
                                    "s", "t", "v", "w", "y"))
   names(elements_list) <- 1L:length(elements_list)
-  as.numeric(degenerate(seq, elements_list))
+  seq <- tolower(seq)
+  deg_seq <- as.numeric(degenerate(seq, elements_list))
+  if(is.matrix(seq))
+    deg_seq <- matrix(deg_seq, ncol = ncol(seq))
+  deg_seq
 }
 
 
 #' Convert numbers to letters
 #'
 #' Converts biological sequence from number to letter notation.
-#' @param seq \code{numeric} vector representing single sequence.
+#' @param seq \code{integer} vector or matrix representing single sequence.
 #' @param seq_type the type of sequence. Can be \code{rna}, \code{dna} or \code{prot}.
 #' @keywords manip
-#' @return a \code{numeric} vector containing converted elements.
+#' @return a \code{character} vector or matrix containing converted elements.
 #' @export
 #' @keywords manip
 #' @seealso 

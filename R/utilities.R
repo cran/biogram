@@ -12,9 +12,9 @@
 #' @return a matrix of 2 columns and n11+n10+n01+n00 rows. Columns represent
 #' target and feature vectors, respectively.
 #' @examples
-#' #equivalent of 
+#' # equivalent of 
 #' #         target
-#' #feature 10 375
+#' # feature 10 375
 #' #        15 600
 #' target_feature <- create_feature_target(10, 375, 15, 600)
 create_feature_target <- function(n11, n01, n10, n00){
@@ -38,24 +38,51 @@ create_feature_target <- function(n11, n01, n10, n00){
 #' @details Input looks odd, but the function was build to be as fast 
 #' as possible subroutine of \code{\link{calc_ig}}, which works on
 #' many features but only one target.
-#' @note Binary vector means numeric vector with 0 or 1.
+#' @note Binary vector means a numeric vector with 0 or 1.
 #' @export
 #' @examples tar <- sample(0L:1, 100, replace = TRUE)
 #' feat <- sample(0L:1, 100, replace = TRUE)
-#' library(bit) #used to code vector as bit
+#' library(bit) # used to code vector as bit
 #' fast_crosstable(as.bit(tar), length(tar), sum(tar),  feat)
 
 fast_crosstable <- function(target_b, len_target, pos_target, feature) {
-  #no input tests - every if clause slows a little bit
-  feature_b = as.bit(feature) #from bit library, faster than any other type
+  # no input tests - every if clause slows a little bit
+  feature_b = as.bit(feature) # from bit library, faster than any other type
   
-  #target positive and feature positive
-  n_tar_f <- sum(feature_b & target_b) #simple boolean algebra to speed it more
-  #feature positive
+  # target positive and feature positive
+  n_tar_f <- sum(feature_b & target_b) # simple boolean algebra to speed it more
+  # feature positive
   pos_f <- sum(feature_b)
   
   c(n_tar_f, # tar +, feature +
     pos_target - n_tar_f, # tar +, feature -
     pos_f - n_tar_f, # tar -, feature +
     len_target - pos_target - pos_f + n_tar_f) # tar -, feature -
+}
+
+
+#' Binarize
+#'
+#' Binarizes a matrix.
+#' 
+#' @param x \code{matrix} or \code{\link[slam]{simple_triplet_matrix}}.
+#' @export
+#' @return a \code{matrix} or \code{\link[slam]{simple_triplet_matrix}} 
+#' (depending on the input).
+
+binarize <- function(x) {
+  nonbin_matrix <- if(is.simple_triplet_matrix(x)) {
+    as.matrix(x)
+  } else {
+    x
+  }
+    
+  nonbin_matrix <- nonbin_matrix > 0
+  storage.mode(nonbin_matrix) <- "integer"
+  
+  if(is.simple_triplet_matrix(x)) {
+    as.simple_triplet_matrix(nonbin_matrix)
+  } else {
+    nonbin_matrix
+  }
 }

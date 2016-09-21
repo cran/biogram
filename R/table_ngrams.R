@@ -1,9 +1,9 @@
 #' Tabulate n-grams
 #' 
 #' Builds a contingency table of the n-gram counts versus their class labels.
-#' @param seq a matrix describing sequences.
-#' @param ngrams a vector of n-grams. Must have the same \code{n}.
-#' @param target \code{integer} vector with target information (e.g. class labels).
+#' @inheritParams count_specified
+#' @param target \code{integer} vector with target information (e.g. class labels). 
+#' Must have at least two values.
 #' @return a data frame with the number of columns equal to the length of the 
 #' \code{target} plus 1. The first column contains names of the n-grams. Further 
 #' columns represents counts of n-grams for respective value of the
@@ -17,9 +17,9 @@
 #' tab <- table_ngrams(seq = rbind(seqs_pos, seqs_neg), 
 #'                     ngrams = c("1_c.t_0", "1_g.g_0", "2_t.c_0", "2_g.g_0", "3_c.c_0", "3_g.c_0"), 
 #'                     target = c(rep(1, 20), rep(0, 20)))
-#' #see the results
+#' # see the results
 #' print(tab)
-#' #easily plot the results using ggplot2
+#' # easily plot the results using ggplot2
 
 
 table_ngrams <- function(seq, ngrams, target) {
@@ -35,16 +35,15 @@ table_ngrams <- function(seq, ngrams, target) {
     stop("target and feature have different lengths.")
   }
   
-  #no need for n-gram validation, because count_specified does it
-  all_ngrams <- as.matrix(count_specified(seq, ngrams))
-  
-  #counts of each value of target
-  n_tar <- data.frame(table(c(rep(1, 20), rep(0, 20))))[, "Freq"]
-  if (length(n_tar) < 2) {
+  if (length(unique(target)) < 2) {
     stop("target must have at least two different values.")
   }
   
-  #values of target
+  
+  # no need for n-gram validation, because count_specified does it
+  all_ngrams <- as.matrix(count_specified(seq, ngrams))
+  
+  # values of target
   val_tar <- sort(unique(target))
   
   res <- t(vapply(ngrams, function(ngram_name) 
