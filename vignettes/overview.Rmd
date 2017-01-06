@@ -1,12 +1,13 @@
 ---
 title: "biogram package"
 author: "Micha&#322; Burdukiewicz, Piotr Sobczyk"
-date: "17.10.2015"
+date: "5.01.2017"
 output: 
   rmarkdown::html_vignette:
     toc: true
+bibliography: "biogram_pub.bib"
 vignette: >
-  %\VignetteIndexEntry{dpcR package - an overview}
+  %\VignetteIndexEntry{biogram package - an overview}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,7 +24,6 @@ size_mod <- -5
 
 my_theme <- theme(plot.background=element_rect(fill = "transparent",
                                                colour = "transparent"),
-                  panel.grid.major = element_line(colour="grey", linetype = "dashed", size = 0.5),
                   panel.grid.major = element_line(colour="lightgrey", linetype = "dashed", size = 0.5),
                   panel.background = element_rect(fill = "transparent",colour = "black"),
                   legend.background = element_rect(fill = "NA"),
@@ -41,21 +41,23 @@ my_theme <- theme(plot.background=element_rect(fill = "transparent",
 
 # Reduction of dimensionality
 
-Since the number of potential n-grams grows exponentially with the $n$, n-gram datasets are often very large. To deal with the curse of dimensionality, the **biogram** package offers two solutions. The first relies on the reduction of an alphabet, which is a common approach in case of analysis of amino acid sequences (CITATIONS) and less applied in studies of nucleic acids.  
+Since the number of potential n-grams grows exponentially with the $n$, n-gram datasets are often very large. To deal with the curse of dimensionality, the **biogram** package offers two solutions. The first relies on the reduction of an alphabet, which is a common approach in case of analysis of amino acid sequences (@murphy_simplified_2000) and less applied in studies of nucleic acids.  
 
 The alternate solution is to filter the non-informative n-grams. The **biogram** package employs feature selection algorithm QuiPT, which allows very fast feature filtering.   
 
 ## Alphabet reduction
 
-*degenerate*
+In many cases the properties of the sequences are not depending on the exact sequence of the amino acids, but rather on their physicochemical properties. In this case, the full amino acid alphabet may be replaced with a shorter alphabet, where amino acids are aggregated to larger groups using some design criteria as physicochemical properties. The **biogram** package supports creation of reduced amino acid alphabets and their analysis by two distance measures: similarity index and encoding distance.
 
 ### Similarity index
 
-The similarity index was firstly introduced as the unnamed distance measure for reduced alphabets by XXX. Briefly, if a pair of elements is in both encodings in the same group or in different groups, the pair scores 1 and in the opposite case 0. The pairs of the identical elements are ignored. The score is later divided by the number of possible pairs ($20 \times 19$ in case of the amino acid alphabet). 
+The similarity index, as computed by the *calc_si* function, was firstly introduced as the unnamed distance measure for reduced alphabets by @stephenson_unearthing_2013. Briefly, if a pair of elements is in both encodings in the same group or in different groups, the pair scores 1 and in the opposite case 0. The pairs of the identical elements are ignored. The score is later divided by the number of possible pairs ($20 \times 19$ in case of the amino acid alphabet). 
 
-$A$: an alphabet.
-$a_1$: an element in the reduced alphabet 1.
-$a_2$: an element in the reduced alphabet 2.
+$A$: an alphabet.  
+
+$a_1$: an element in the reduced alphabet 1.  
+
+$a_2$: an element in the reduced alphabet 2.  
 
 $$
 S = \sum_{a_1 \in A} \sum_{a_2 \in A, a_2 \neq a_1 } \sum_{enc_1 \in encodings_1} \sum_{enc_2 \in encodings_2} 1_{a_1 \in enc_1 \land a_2 \in enc_2}
@@ -94,7 +96,7 @@ b <- list(`1` = c("f", "r", "w", "y"),
 kable(group2df(b), caption = "Encoding B")
 ```
 
-The encoding distance between both groups is `r calc_ed(a, b)`.  
+The encoding distance between both groups is `r calc_ed(a, b, measure = "pi")`.  
 
 ```{r, echo = FALSE, message = FALSE, results='asis'}
 data(aaprop)
@@ -123,7 +125,7 @@ ggplot(dat, aes(x = f1, y = f2, colour = pair, label = label)) +
   geom_line() +
   geom_point(aes(x = f1, y = f2, colour = enc), size = 4) + 
   facet_wrap(~ id) + 
-  geom_text(aes(x = f1, y = f2, colour = enc, label = label), vjust = 1.5, size = 4) + 
+  geom_text(aes(x = f1, y = f2, colour = enc, label = label), vjust = 1.8, size = 4) + 
   scale_color_brewer(palette="Dark2", guide = "none") +
   my_theme
 ```
@@ -175,11 +177,11 @@ b <- list(`1` = c("f", "r", "w", "y"),
           `3` = c("a", "d", "e", "g", "h", "k", "m", "n", "p", "q", "s"))
 
 # calculate encoding distance
-calc_ed(a = a, b = b)
+calc_ed(a = a, b = b, measure = "pi")
 
 # get properties from aaprop dataset and calculate normalized encoding distance
 data(aaprop)
-calc_ed(a = a, b = b, prop = aaprop[c(22, 211), ])
+calc_ed(a = a, b = b, measure = "pi", prop = aaprop[c(22, 211), ])
 ```
 
 ### Quick Permutation Test (QuiPT)
@@ -233,12 +235,16 @@ $$P((Target, Feature) = (1,0)) = p \cdot (1-q)$$
 $$P((Target, Feature) = (0,1)) = (1-p) \cdot q$$
 $$P((Target, Feature) = (0,0)) = (1-p) \cdot (1-q)$$
 
-This means that a target-feature can be described as multinomial distribution.
+This means that a target-feature can be described as multinomial distribution:
 
-$$ {n \choose n_{1,1}} (p\cdot q)^{n_{1,1}} 
+$$ 
+\begin{aligned}
+{n \choose n_{1,1}} (p\cdot q)^{n_{1,1}} 
 {n - n_{1,1} \choose n_{1,0}} (p\cdot (1-q))^{n_{1,0}}
-{n - n_{1,1} - n_{1,0} \choose n_{0,1}} ((1-p)\cdot q)^{n_{0,1}} 
-{n - n_{1,1} - n_{1,0} -n_{0,1}\choose n_{0,0}} ((1-p)\cdot (1-q))^{n_{0,0}}$$
+{n - n_{1,1} - n_{1,0} \choose n_{0,1}} ((1-p)\cdot q)^{n_{0,1}} \\
+{n - n_{1,1} - n_{1,0} -n_{0,1}\choose n_{0,0}} ((1-p)\cdot (1-q))^{n_{0,0}}
+\end{aligned}
+$$
 
 However we have important restriction that $n_{1,\cdot} = n_{1,1} + n_{1,0}$ and
 $n_{\cdot, 1} = n_{1,1} + n_{0,1}$ are known and fixed as they describe the number 
@@ -259,3 +265,4 @@ no longer need to perform any replications. Furthermore, by using
 exact test we will get precise values of tails which was not guaranteed with
 random permutations.
 
+# References

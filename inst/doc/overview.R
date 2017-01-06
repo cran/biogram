@@ -10,7 +10,6 @@ size_mod <- -5
 
 my_theme <- theme(plot.background=element_rect(fill = "transparent",
                                                colour = "transparent"),
-                  panel.grid.major = element_line(colour="grey", linetype = "dashed", size = 0.5),
                   panel.grid.major = element_line(colour="lightgrey", linetype = "dashed", size = 0.5),
                   panel.background = element_rect(fill = "transparent",colour = "black"),
                   legend.background = element_rect(fill = "NA"),
@@ -72,7 +71,7 @@ ggplot(dat, aes(x = f1, y = f2, colour = pair, label = label)) +
   geom_line() +
   geom_point(aes(x = f1, y = f2, colour = enc), size = 4) + 
   facet_wrap(~ id) + 
-  geom_text(aes(x = f1, y = f2, colour = enc, label = label), vjust = 1.5, size = 4) + 
+  geom_text(aes(x = f1, y = f2, colour = enc, label = label), vjust = 1.8, size = 4) + 
   scale_color_brewer(palette="Dark2", guide = "none") +
   my_theme
 
@@ -103,9 +102,9 @@ b <- list(`1` = c("f", "r", "w", "y"),
           `3` = c("a", "d", "e", "g", "h", "k", "m", "n", "p", "q", "s"))
 
 # calculate encoding distance
-calc_ed(a = a, b = b)
+calc_ed(a = a, b = b, measure = "pi")
 
 # get properties from aaprop dataset and calculate normalized encoding distance
 data(aaprop)
-calc_ed(a = a, b = b, prop = aaprop[c(22, 211), ])
+calc_ed(a = a, b = b, measure = "pi", prop = aaprop[c(22, 211), ])
 
