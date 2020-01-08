@@ -4,8 +4,13 @@
 \alias{as.data.frame.feature_test}
 \title{Coerce feature_test object to a data frame}
 \usage{
-\method{as.data.frame}{feature_test}(x, row.names = NULL, optional = FALSE,
-  stringsAsFactors = FALSE, ...)
+\method{as.data.frame}{feature_test}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  stringsAsFactors = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{object of class \code{\link{feature_test}}.}
@@ -27,4 +32,3 @@ occurrences in positive and negative sequences.
 Coerce results of \code{\link{test_features}} function to a 
 \code{\link[base]{data.frame}}.
 }
-

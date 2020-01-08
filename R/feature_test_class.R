@@ -2,12 +2,13 @@
 #'
 #' A result of \code{\link{test_features}} function.
 #'
-#' @details An object of class \code{feature_test} is a numeric vector of p-values. Additional 
-#' attributes characterizes futher the details of test which returned these p-values.
+#' @details An object of the \code{feature_test} class is a numeric vector of p-values. 
+#' Additional attributes characterizes futher the details of test which returned these 
+#' p-values.
 #' @section Attributes:
 #' \describe{
 #'   \item{criterion}{the criterion used in permutation test.}
-#'   \item{adjust}{the name of p-value adjusting method}
+#'   \item{adjust}{the name of p-value adjusting method.}
 #'   \item{times}{the number of permutations.  If QuiPT was chosen \code{NA}.}
 #'   \item{occ}{frequency of features splitted in subset based on the value of target.}
 #' }
@@ -28,7 +29,7 @@ create_feature_test <- function(p_value, criterion, adjust, times, occ) {
     stop("p_values must be numeric")
   
   # add names if they are missing
-  if(is.null(names(p_value)))
+  if(is.null(names(p_value)) & length(p_value) > 0)
     names(p_value) <- paste0("feature", 1L:length(p_value))
   
   res <- p_value

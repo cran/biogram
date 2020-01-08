@@ -4,8 +4,15 @@
 \alias{construct_ngrams}
 \title{Construct and filter n-grams}
 \usage{
-construct_ngrams(target, seq, u, n_max, conf_level = 0.95, gap = TRUE,
-  use_heuristics = TRUE)
+construct_ngrams(
+  target,
+  seq,
+  u,
+  n_max,
+  conf_level = 0.95,
+  gap = TRUE,
+  use_heuristics = TRUE
+)
 }
 \arguments{
 \item{target}{\code{integer} vector with target information (e.g. class labels).}
@@ -55,4 +62,3 @@ bigrams <- construct_ngrams(human_cleave[c(1L:100, 801L:900), "tar"], deg_seqs, 
 \seealso{
 Feature filtering method: \code{\link{test_features}}.
 }
-

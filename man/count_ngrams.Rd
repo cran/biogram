@@ -4,8 +4,7 @@
 \alias{count_ngrams}
 \title{Count n-grams in sequences}
 \usage{
-count_ngrams(seq, n, u, d = 0, pos = FALSE, scale = FALSE,
-  threshold = 0)
+count_ngrams(seq, n, u, d = 0, pos = FALSE, scale = FALSE, threshold = 0)
 }
 \arguments{
 \item{seq}{a vector or matrix describing sequence(s).}
@@ -83,4 +82,3 @@ Count n-grams for multiple values of n: \code{\link{count_multigrams}}.
 
 Count only specified n-grams: \code{\link{count_specified}}.
 }
-

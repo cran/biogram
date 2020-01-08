@@ -1,4 +1,4 @@
-## ---- echo = FALSE, message = FALSE, results='asis'----------------------
+## ---- echo = FALSE, message = FALSE, results='asis'---------------------------
 library(knitr)
 opts_chunk$set(fig.width=7, fig.height=6)
 
@@ -24,7 +24,7 @@ my_theme <- theme(plot.background=element_rect(fill = "transparent",
                   strip.background = element_rect(fill = "NA", colour = "NA"))
 
 
-## ---- echo = FALSE, message = FALSE, results='asis'----------------------
+## ---- echo = FALSE, message = FALSE, results='asis'---------------------------
 group2df <- function(group_list, caption = NULL, label = NULL) {
   data.frame(ID = 1L:length(group_list), 
              Groups = sapply(group_list, function(i)
@@ -37,14 +37,14 @@ a <- list(`1` = "p",
 
 kable(group2df(a), caption = "Encoding A")
 
-## ---- echo = FALSE, message = FALSE, results='asis'----------------------
+## ---- echo = FALSE, message = FALSE, results='asis'---------------------------
 b <- list(`1` = c("f", "r", "w", "y"), 
           `2` = c("c", "i", "l", "t", "v"), 
           `3` = c("a", "d", "e", "g", "h", "k", "m", "n", "p", "q", "s"))
 
 kable(group2df(b), caption = "Encoding B")
 
-## ---- echo = FALSE, message = FALSE, results='asis'----------------------
+## ---- echo = FALSE, message = FALSE, results='asis'---------------------------
 data(aaprop)
 a_prop <- aaprop[c(22, 211), ]
 
@@ -75,7 +75,7 @@ ggplot(dat, aes(x = f1, y = f2, colour = pair, label = label)) +
   scale_color_brewer(palette="Dark2", guide = "none") +
   my_theme
 
-## ---- echo = FALSE, message = FALSE, results='asis'----------------------
+## ---- echo = FALSE, message = FALSE, results='asis'---------------------------
 tmp <- sapply(coords_a, function(single_coords_a) {
   distances <- sapply(coords_b, function(single_coords_b) 
     #vector of distances between groups
@@ -90,7 +90,7 @@ rownames(tmp) <- paste0("Enc b, group ", rownames(tmp))
 
 kable(tmp, caption = "Distances between groups of encodings a and b.")
 
-## ---- echo = TRUE--------------------------------------------------------
+## ---- echo = TRUE-------------------------------------------------------------
 
 # define two encodings
 a <- list(`1` = "p", 

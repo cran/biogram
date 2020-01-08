@@ -108,7 +108,7 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
     }
   })
   
-  feature_size <- if (class(features) == "simple_triplet_matrix") {
+  feature_size <- if ("simple_triplet_matrix" %in% class(features)) {
     slam::col_sums(features)
   } else {
     colSums(features)
@@ -126,6 +126,7 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
     dists <- lapply(feature_size, function(i){
       t <- create_feature_target(i, abs(sum(target) - i), 0, 
                                  abs(length(target) - sum(target))) 
+
       distr_crit(t[, 1], t[, 2], criterion = criterion)
     })
     
@@ -149,11 +150,17 @@ test_features <- function(target, features, criterion = "ig", adjust = "BH",
   if(!is.null(adjust))
     p_vals <- p.adjust(p_vals, method = adjust)
   
+  occ <- if(length(p_vals) > 0) {
+    calc_occurences(target, features)
+  } else {
+    NULL
+  }
+  
   create_feature_test(p_value = p_vals, 
                       criterion = valid_criterion[["nice_name"]],
                       adjust = adjust,
                       times = ifelse(quick, NA, times),
-                      occ = calc_occurences(target, features))
+                      occ = occ)
 }
 
 #calculates occurences of features in target+ and target- groups
@@ -164,6 +171,10 @@ calc_occurences <- function(target, features) {
   occ <- apply(features, 2, function(i)
     fast_crosstable(target_b, len_target, pos_target, i))[c(1, 3), ]/
     c(pos_target, len_target - pos_target)
+  # apply may return a vector instead of an array
+  if(!is.matrix(occ))
+    occ <- matrix(occ, ncol = 1)
+  
   rownames(occ) <- c("pos", "neg")
   occ
 }

@@ -1,16 +1,19 @@
 Package: biogram
 Type: Package
 Title: N-Gram Analysis of Biological Sequences
-Version: 1.4
+Version: 1.6.1
 LazyData: true
-Date: 2017-01-5
+Date: 2020-01-06
 Authors@R: c(
     person("Michal", "Burdukiewicz",
     email = "michalburdukiewicz@gmail.com",
+    comment = c(ORCID = "0000-0001-8926-582X"),
     role = c("cre", "aut")),
     person("Piotr", "Sobczyk",
     role = "aut"),
     person("Chris", "Lauber",
+    role = "aut"),
+    person("Dominik", "Rafacz",
     role = "aut"))
 Description: Tools for extraction and analysis of various
     n-grams (k-mers) derived from biological sequences (proteins
@@ -25,10 +28,13 @@ Imports: bit, combinat, entropy, partitions
 Suggests: ggplot2, knitr, testthat
 NeedsCompilation: no
 Repository: CRAN
-RoxygenNote: 5.0.1
-Packaged: 2017-01-05 21:10:58 UTC; Michal
-Author: Michal Burdukiewicz [cre, aut],
+Encoding: UTF-8
+RoxygenNote: 7.0.2
+Packaged: 2020-01-07 12:05:15 UTC; michal
+Author: Michal Burdukiewicz [cre, aut]
+    (<https://orcid.org/0000-0001-8926-582X>),
   Piotr Sobczyk [aut],
-  Chris Lauber [aut]
+  Chris Lauber [aut],
+  Dominik Rafacz [aut]
 Maintainer: Michal Burdukiewicz <michalburdukiewicz@gmail.com>
-Date/Publication: 2017-01-06 01:18:55
+Date/Publication: 2020-01-08 23:02:03 UTC

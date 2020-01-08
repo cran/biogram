@@ -48,7 +48,7 @@ degenerate <- function(seq, element_groups) {
     tmp_seq[tmp_seq %in% element_groups[[i]]] <- names(element_groups)[i]
   }
   
-  if(class(seq) == "matrix")
+  if(is.matrix(seq))
     dim(tmp_seq) <- dim(seq)
   
   tmp_seq
@@ -72,15 +72,7 @@ degenerate <- function(seq, element_groups) {
 #' l2n(sample_seq, "prot")
 
 l2n <- function(seq, seq_type) {
-  if (!(seq_type %in% c("prot", "dna", "rna")))
-    stop("The value of 'what' must be: 'dna', 'rna' or 'prot'.")
-  elements_list <- switch(seq_type,
-                          rna = c("a", "c", "g", "u"),
-                          dna = c("a", "c", "g", "t"),
-                          prot = c("a", "c", "d", "e", "f", 
-                                   "g", "h",  "i", "k", "l", 
-                                   "m", "n", "p", "q", "r", 
-                                   "s", "t", "v", "w", "y"))
+  elements_list <- return_elements(seq_type)
   names(elements_list) <- 1L:length(elements_list)
   seq <- tolower(seq)
   deg_seq <- as.numeric(degenerate(seq, elements_list))
@@ -108,16 +100,73 @@ l2n <- function(seq, seq_type) {
 #' n2l(sample_seq, "prot")
 
 n2l <- function(seq, seq_type) {
-  if (!(seq_type %in% c("prot", "dna", "rna")))
-    stop("The value of 'what' must be: 'dna', 'rna' or 'prot'.")
-  names_list <- switch(seq_type,
-                          rna = c("a", "c", "g", "u"),
-                          dna = c("a", "c", "g", "t"),
-                          prot = c("a", "c", "d", "e", "f", 
-                                   "g", "h",  "i", "k", "l", 
-                                   "m", "n", "p", "q", "r", 
-                                   "s", "t", "v", "w", "y"))
+  names_list <- return_elements(seq_type)
   elements_list <- 1L:length(names_list)
   names(elements_list) <- names_list
   degenerate(seq, elements_list)
+}
+
+#' Convert encoding from full to simple format
+#'
+#' Converts an encoding from the full format to the simple format.
+#' @param x encoding.
+#' @export
+#' @examples 
+#' aa1 = list(`1` = c("g", "a", "p", "v", "m", "l", "i"), 
+#'            `2` = c("k", "h"), 
+#'            `3` = c("d", "e"), 
+#'            `4` = c("f", "r", "w", "y", "s", "t", "c", "n", "q"))
+#' full2simple(aa1)
+#' 
+full2simple <- function(x) {
+  single_enc <- x
+  element_df <- do.call(rbind, lapply(1L:length(single_enc), function(i) {
+    data.frame(gr = rep(names(single_enc[i]), length(single_enc[[i]])),
+               element = single_enc[[i]], stringsAsFactors = FALSE)
+  }))
+  
+  element_df <- element_df[order(element_df[["element"]]), ]
+  res <- element_df[["gr"]]
+  names(res) <- element_df[["element"]]
+  res
+}
+
+
+#' Convert encoding from simple to full format
+#'
+#' Converts an encoding from the simple format to the full format.
+#' @param x encoding (see Details).
+#' @details The encoding should be named. Each name should correspond to a different
+#' amino acid or nucleotide.
+#' @export
+#' @examples 
+#' aa1 = structure(c("1", "4", "3", "3", "4", "1", "2", "1", "2", "1", 
+#'                   "1", "4", "1", "4", "4", "4", "4", "1", "4", "4"), 
+#'                 .Names = c("a", "c", "d", "e", "f", "g", "h", "i", 
+#'                            "k", "l", "m", "n", "p", "q", 
+#'                            "r", "s", "t", "v", "w", "y"))
+#' simple2full(aa1)
+#' 
+simple2full <- function(x) {
+  if(is.null(names(x)))
+    stop("'x' must be named.")
+  single_enc <- x
+  gr <- unique(sort(single_enc))
+  res <- lapply(gr, function(i)
+    names(x[x == i]))
+  names(res) <- gr
+  res
+}
+
+# an internal function returning elements for a specific sequence type: aa, dna, rna
+return_elements <- function(seq_type) {
+  if (!(seq_type %in% c("prot", "dna", "rna")))
+    stop("The value of 'what' must be: 'dna', 'rna' or 'prot'.")
+  switch(seq_type,
+         rna = c("a", "c", "g", "u"),
+         dna = c("a", "c", "g", "t"),
+         prot = c("a", "c", "d", "e", "f", 
+                  "g", "h",  "i", "k", "l", 
+                  "m", "n", "p", "q", "r", 
+                  "s", "t", "v", "w", "y"))
 }

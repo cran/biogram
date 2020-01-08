@@ -4,8 +4,15 @@
 \alias{test_features}
 \title{Permutation test for feature selection}
 \usage{
-test_features(target, features, criterion = "ig", adjust = "BH",
-  threshold = 1, quick = TRUE, times = 1e+05)
+test_features(
+  target,
+  features,
+  criterion = "ig",
+  adjust = "BH",
+  threshold = 1,
+  quick = TRUE,
+  times = 1e+05
+)
 }
 \arguments{
 \item{target}{\code{integer} vector with target information (e.g. class labels).}
@@ -103,4 +110,3 @@ Conference on Machine Learning, Springer, 2004.
 p-value.
 }
 \keyword{nonparametric}
-

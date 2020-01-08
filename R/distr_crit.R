@@ -1,19 +1,22 @@
 #' Compute criterion distribution 
 #' 
-#' Computes criterion distribution for feature, target under null hypothesis
+#' Computes criterion distribution under null hypothesis for all contingency 
+#' tables possible for a feature and a target.
 #' 
 #' @param target \{0,1\}-valued target vector. See Details.
 #' @param feature \{0,1\}-valued feature vector. See Details.
 #' @param criterion criterion used for calculations of distribution. 
 #' See \code{\link{calc_criterion}} for the list of avaible criteria.
 #' @export
-#' @details both \code{target} and \code{feature} vectors may contain only 0 and 1.
+#' @details both \code{target} and \code{feature} vectors may contain only 0 
+#' and 1.
 #' @return An object of class \code{\link{criterion_distribution}}.
 #' @seealso \code{\link{calc_criterion}}.
 #' @keywords distribution
 #' @examples
 #' target_feature <- create_feature_target(10, 375, 15, 600) 
 #' distr_crit(target = target_feature[,1], feature = target_feature[,2])
+
 distr_crit <- function(target, feature, criterion = "ig") {
   n <- length(target)
   if (length(feature) != n) {
@@ -36,25 +39,19 @@ distr_crit <- function(target, feature, criterion = "ig") {
   p <- non_zero_target/n
   q <- non_zero_feat/n
   
+  # min_iter and max_iter limit the function to possible contingence matrices
   max_iter <- min(non_zero_target, non_zero_feat)
+  min_iter <- max(0, non_zero_target + non_zero_feat - n)
   cross_tab <- fast_crosstable(as.bit(target), length(target), sum(target), feature)
   # if(cross_tab[3L] == 0)
   #   max_iter <- sort(cross_tab)[2]
   
   # values of criterion for different contingency tables
-  diff_conts <- sapply(0L:max_iter, function(i) {
+  diff_conts <- sapply(min_iter:max_iter, function(i) {
     # to do - check if other criterions also follow this distribution
     
-    # if there are more 1 than 0
-    ones <- n - non_zero_target - non_zero_feat + i > 0
-    
-    k <- if(ones) {
-      c(i, non_zero_feat - i, non_zero_target - i, 
-        n - non_zero_target - non_zero_feat + i)
-    } else {
-      c(i, n - non_zero_feat - i, n - non_zero_target - i, 
-        - n + non_zero_target + non_zero_feat + i)
-    }
+    k <- c(i, non_zero_feat - i, non_zero_target - i, 
+           n - non_zero_target - non_zero_feat + i)
     
     prob_log <- dmultinom(x = k,
                           size = n,
@@ -93,7 +90,7 @@ distr_crit <- function(target, feature, criterion = "ig") {
   
   create_criterion_distribution(criterion_values, 
                                 criterion_distribution, 
-                                0L:max_iter, 
+                                min_iter:max_iter, 
                                 diff_conts["vals", ],
                                 exp(diff_conts["prob_log", ])/sum(exp(diff_conts["prob_log", ])),
                                 valid_criterion[["nice_name"]])
