@@ -7,6 +7,8 @@
 #' @param feature \{0,1\}-valued feature vector. See Details.
 #' @param criterion criterion used for calculations of distribution. 
 #' See \code{\link{calc_criterion}} for the list of avaible criteria.
+#' @param iter_limit limit the number of calculated contingence matrices. If
+#' \code{NULL}, computes all possible contingence matrices.
 #' @export
 #' @details both \code{target} and \code{feature} vectors may contain only 0 
 #' and 1.
@@ -17,7 +19,7 @@
 #' target_feature <- create_feature_target(10, 375, 15, 600) 
 #' distr_crit(target = target_feature[,1], feature = target_feature[,2])
 
-distr_crit <- function(target, feature, criterion = "ig") {
+distr_crit <- function(target, feature, criterion = "ig", iter_limit = 200) {
   n <- length(target)
   if (length(feature) != n) {
     stop("Target and feature have different lengths.")
@@ -42,12 +44,22 @@ distr_crit <- function(target, feature, criterion = "ig") {
   # min_iter and max_iter limit the function to possible contingence matrices
   max_iter <- min(non_zero_target, non_zero_feat)
   min_iter <- max(0, non_zero_target + non_zero_feat - n)
-  cross_tab <- fast_crosstable(as.bit(target), length(target), sum(target), feature)
+  cross_tab <- fast_crosstable(target, length(target), sum(target), feature)
   # if(cross_tab[3L] == 0)
   #   max_iter <- sort(cross_tab)[2]
+
+  if (is.null(iter_limit))
+    iter_limit <- max_iter
   
   # values of criterion for different contingency tables
-  diff_conts <- sapply(min_iter:max_iter, function(i) {
+  crit_range <- max_iter - min_iter
+  possible_crit_values <- if(crit_range > iter_limit) {
+    round(seq(from = min_iter, to = max_iter, length.out = iter_limit), 0)
+  } else {
+    min_iter:max_iter
+  }
+  
+  diff_conts <- sapply(possible_crit_values, function(i) {
     # to do - check if other criterions also follow this distribution
     
     k <- c(i, non_zero_feat - i, non_zero_target - i, 
@@ -90,7 +102,7 @@ distr_crit <- function(target, feature, criterion = "ig") {
   
   create_criterion_distribution(criterion_values, 
                                 criterion_distribution, 
-                                min_iter:max_iter, 
+                                possible_crit_values, 
                                 diff_conts["vals", ],
                                 exp(diff_conts["prob_log", ])/sum(exp(diff_conts["prob_log", ])),
                                 valid_criterion[["nice_name"]])

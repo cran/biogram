@@ -54,6 +54,44 @@ degenerate <- function(seq, element_groups) {
   tmp_seq
 }
 
+#' Degenerate n-grams
+#' 
+#' 'Degenerates' n-grams by aggregating amino acid or nucleotide elements
+#' into bigger groups. 
+#' @param x object containing n-grams.
+#' @param element_groups encoding of elements: list of groups to which elements 
+#' of n-grams should be aggregated. Must have unique names.
+#' @param binarize logical indicating if n-grams should be binarized
+#' @return A \code{character} vector or matrix (if input is a matrix) 
+#' containing degenerated n-grams.
+#' @export
+
+degenerate_ngrams <- function(x, element_groups, binarize = FALSE) {
+  
+  if ('_' %in% unlist(element_groups)) {
+    stop("'element_groups' cannot contain '_'.")
+  }
+  
+  decoded <- strsplit(decode_ngrams(colnames(x)), "")
+  degenerated <- lapply(decoded, degenerate, element_groups = c(element_groups, c("_" = "_")))
+  deg_ngrams <- lapply(lapply(degenerated, paste0, collapse = ""), code_ngrams)
+  
+  res <- do.call(cbind, lapply(unique(deg_ngrams), function(ith_ngram) {
+    row_sums(x[, ith_ngram == deg_ngrams, drop = FALSE])
+  }))
+  
+  colnames(res) <- unique(deg_ngrams)
+  
+  if(binarize)
+    res <- binarize(res)
+  
+  if(inherits(x, "simple_triplet_matrix"))
+    res <- as.simple_triplet_matrix(res)
+  
+  res
+}
+
+
 #' Convert letters to numbers
 #'
 #' Converts biological sequence from letter to number notation.
